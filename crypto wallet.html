@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rono Crypto Wallet | Secure & Local</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --warning: #fbbf24;
+            --danger: #f43f5e;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .logo { font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; }
+        .logo span { color: var(--accent); }
+        .badge { background: #334155; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+
+        /* --- Main Wallet Card --- */
+        .wallet-card {
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: 30px;
+            border: 1px solid #334155;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .balance-label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
+        .balance-main { 
+            font-size: 2.8rem; 
+            font-weight: 800; 
+            margin: 10px 0; 
+            cursor: pointer; 
+            transition: transform 0.2s;
+        }
+        .balance-main:active { transform: scale(0.95); }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 14px;
+            border-radius: 16px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-outline { background: transparent; border: 1px solid #475569; color: var(--text-main); }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* --- Section Styling --- */
+        #depositSection, #sendSection {
+            display: none;
+            margin-top: 25px;
+            text-align: left;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .method-card {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .method-card:hover { border-color: var(--accent); }
+        .method-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        
+        .method-content {
+            display: none;
+            padding-top: 10px;
+            border-top: 1px solid #1e293b;
+            margin-top: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+
+        /* --- Secrets Display --- */
+        #secretsArea {
+            display: none;
+            background: #450a0a;
+            border: 1px solid var(--danger);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 0.8rem;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo">RONO<span>.wallet</span></div>
+        <div class="badge">Ethereum Mainnet</div>
+    </header>
+
+    <div class="wallet-card">
+        <span class="balance-label">Available Balance</span>
+        <div class="balance-main" id="balanceDisplay" onclick="toggleBalance()">**** KES</div>
+        
+        <div class="action-grid">
+            <button class="btn btn-primary" onclick="showDeposit()">📥 Deposit</button>
+            <button class="btn btn-outline" onclick="showSend()">📤 Send</button>
+        </div>
+
+        <div id="depositSection">
+            <h4 style="margin-bottom: 15px; color: var(--text-dim);">Select Payment Method</h4>
+            
+            <div class="method-card" onclick="toggleMethod('stkForm')">
+                <div class="method-title">⚡ M-Pesa Express (STK Push)</div>
+                <div id="stkForm" class="method-content" onclick="event.stopPropagation()">
+                    <input type="text" id="phoneNum" placeholder="254712345678">
+                    <input type="number" id="stkAmount" placeholder="Amount in KES">
+                    <button class="btn btn-primary" style="width:100%;" onclick="runSTK()">Request PIN Prompt</button>
+                    <div id="stkStatus" style="font-size: 0.75rem; margin-top:10px; color: var(--warning);"></div>
+                </div>
+            </div>
+
+            <div class="method-card" onclick="toggleMethod('manualMpesa')">
+                <div class="method-title">🟢 M-Pesa Manual (Till)</div>
+                <div id="manualMpesa" class="method-content">
+                    <p style="font-size: 0.85rem; line-height: 1.5;">
+                        Go to M-Pesa > Lipa na M-Pesa > Buy Goods<br>
+                        Till Number: <b style="color:var(--success)">4449442</b>
+                    </p>
+                </div>
+            </div>
+
+            <div class="method-card" onclick="toggleMethod('bankDetails')">
+                <div class="method-title">🔵 Bank Transfer (KCB)</div>
+                <div id="bankDetails" class="method-content">
+                    <p style="font-size: 0.85rem; line-height: 1.5;">
+                        Bank: <b>KCB Bank Kenya</b><br>
+                        Account: <b style="color:var(--accent)">1261265270</b>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div id="sendSection">
+            <h4 style="margin-bottom: 15px; color: var(--text-dim);">Send Crypto</h4>
+            <div class="method-card" style="cursor: default; border-color: var(--accent);">
+                <input type="text" id="recipientAddr" placeholder="Recipient Address (0x...)">
+                <input type="number" id="sendAmount" placeholder="Amount in USDT">
+                <button class="btn btn-primary" style="width:100%;" onclick="executeSend()">Confirm Send</button>
+                <div id="sendStatus" style="font-size: 0.75rem; margin-top:10px; color: var(--warning);"></div>
+            </div>
+        </div>
+
+        <button class="btn btn-outline" style="width:100%; margin-top:20px; font-size: 0.8rem;" onclick="createNewWallet()">+ Create New Secure Wallet</button>
+
+        <div id="secretsArea">
+            <p style="color: var(--danger); font-weight: bold; margin-bottom: 5px;">⚠️ PRIVATE KEY - DO NOT SHARE</p>
+            <div id="keyDisplay" style="word-break: break-all; opacity: 0.7; font-family: monospace;"></div>
+            <p style="margin-top: 15px; color: var(--warning);">Public Address:</p>
+            <div id="addrDisplay" style="word-break: break-all; font-family: monospace;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isHidden = true;
+    let currentBalance = "100,500.00"; // Simulated balance in KES
+
+    // 1. Wallet Logic
+    function createNewWallet() {
+        if(!confirm("Generate a new wallet? This will replace your current one if not backed up.")) return;
+        
+        const wallet = ethers.Wallet.createRandom();
+        
+        document.getElementById('keyDisplay').innerText = wallet.privateKey;
+        document.getElementById('addrDisplay').innerText = wallet.address;
+        document.getElementById('secretsArea').style.display = 'block';
+        
+        alert("Success! Your private keys are shown below. Write them down safely.");
+    }
+
+    // 2. UI Toggles
+    function toggleBalance() {
+        isHidden = !isHidden;
+        document.getElementById('balanceDisplay').innerText = isHidden ? "**** KES" : `${currentBalance} KES`;
+    }
+
+    function showDeposit() {
+        document.getElementById('sendSection').style.display = 'none'; // Close other
+        const section = document.getElementById('depositSection');
+        section.style.display = (section.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function showSend() {
+        document.getElementById('depositSection').style.display = 'none'; // Close other
+        const section = document.getElementById('sendSection');
+        section.style.display = (section.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function toggleMethod(id) {
+        const target = document.getElementById(id);
+        const isOpen = target.style.display === 'block';
+        
+        // Close all first
+        document.querySelectorAll('.method-content').forEach(el => el.style.display = 'none');
+        
+        // Toggle selected
+        target.style.display = isOpen ? 'none' : 'block';
+    }
+
+    // 3. Simulated Actions
+    async function runSTK() {
+        const phone = document.getElementById('phoneNum').value;
+        const amt = document.getElementById('stkAmount').value;
+        const status = document.getElementById('stkStatus');
+
+        if(phone.length < 10 || !amt) {
+            alert("Please enter a valid phone and amount.");
+            return;
+        }
+
+        status.innerText = "⏳ Connecting to Safaricom...";
+        
+        setTimeout(() => {
+            status.innerHTML = "📲 <b>PIN Prompt Sent!</b> Check your phone.";
+            status.style.color = "#10b981";
+        }, 2000);
+    }
+
+    function executeSend() {
+        const addr = document.getElementById('recipientAddr').value;
+        const amt = document.getElementById('sendAmount').value;
+        const status = document.getElementById('sendStatus');
+
+        if(!addr || !amt) {
+            alert("Please fill in recipient and amount.");
+            return;
+        }
+
+        status.innerText = "🔄 Broadcasting to Ethereum Network...";
+        
+        setTimeout(() => {
+            status.innerHTML = "✅ <b>Transaction Sent!</b> View on Etherscan.";
+            status.style.color = "#10b981";
+        }, 2500);
+    }
+</script>
+
+</body>
+</html>
