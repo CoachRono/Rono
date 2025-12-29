@@ -165,5 +165,33 @@
             </div>
         </div>
     </div>
+    <script>
+    // 1. Handle the "Updates" button click
+    const updatesBtn = document.getElementById('updatesBtn');
+    updatesBtn.addEventListener('click', () => {
+        alert("You've subscribed to Daisy Teituk Library updates! 🔔");
+    });
+
+    // 2. Handle the "Sign in" form submission
+    const loginForm = document.querySelector('form');
+    loginForm.addEventListener('submit', (event) => {
+        // Prevent the page from refreshing (the default behavior)
+        event.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        // Basic validation check
+        if (email && password) {
+            console.log("Attempting login for:", email);
+            alert(`Welcome back, ${email}! Logging you in...`);
+            
+            // For now, let's "redirect" to a mock dashboard
+            // window.location.href = "/dashboard.html"; 
+        } else {
+            alert("Please enter both email and password.");
+        }
+    });
+</script>
 </body>
 </html>
